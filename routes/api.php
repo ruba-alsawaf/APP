@@ -11,7 +11,11 @@ Route::group([
 ], function ($router) {
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/logout', [AuthController::class, 'logout']);
-    Route::post('/register', [AuthController::class, 'register']); 
+    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/confirm-phone', [AuthController::class, 'confirmPhone'])->name('api.confirm.phone');
+    Route::post('/verify-otp', [AuthController::class, 'verifyOtp'])->name('api.verify.otp'); 
+
+
     Route::post('/complete-profile', [AuthController::class, 'completeProfile']);
     Route::get('/user-info', [AuthController::class, 'getUser']);
     Route::get('/experts/category/{category}', [AuthController::class, 'getExpertsByCategory']);
