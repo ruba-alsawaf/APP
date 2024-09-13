@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use App\Models\Expert;
+use App\Models\ExpertAvailability;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Hash;
 use App\Models\ConsultationCategory;
@@ -104,7 +105,7 @@ public function logout(Request $request)
         'photo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         'experiences' => 'nullable|string|max:5000',
         'availability' => 'nullable|string|max:255',
-        'consultation_categories.*' => 'nullable|array',
+        'consultation_category_id' => 'required|exists:consultation_categories,id',
     ]);
 
     $credentials = $request->only('email', 'password');
@@ -127,7 +128,7 @@ public function logout(Request $request)
     $expert->specialization = $request->specialization;
     $expert->experiences = $request->experiences;
     $expert->availability = $request->availability;
-    $expert->consultation_categories = json_encode($request->consultation_categories);
+    $expert->consultation_category_id = intval($request->consultation_category_id);
     
     $expert->save();
 
@@ -160,14 +161,137 @@ public function getUser(Request $request)
     }
 }
 
-    public function getExpertsByCategory($category)
-    {
-            $experts = Expert::where('consultation_categories', 'LIKE', "%{$category}%")->get();
-        
-            if ($experts->isEmpty()) {
-                return response()->json(['message' => 'No experts found in this category'], 404);
-            }
-        
-            return response()->json($experts);
+    public function getCategoriesWithExperts()
+{
+    $categories = ConsultationCategory::with('experts')->get();
+    
+    return response()->json($categories);
+}
+    public function getConsultationCategories()
+{
+    $categories = ConsultationCategory::all();
+    return response()->json($categories);
+}
+
+
+    public function searchName(Request $request)
+{
+    $query = $request->input('query');  
+
+    if (!$query) {
+        return response()->json(['message' => 'Query not provided'], 400);
     }
+
+    $experts = Expert::where('name', 'like', "%$query%")
+        ->get();
+
+    if ($experts->isEmpty()) {
+        return response()->json(['message' => 'No experts found'], 404);
+    }
+
+    return response()->json($experts);
+}
+
+
+public function searchConsultation_categories(Request $request)
+{
+    $query = $request->input('query');  
+
+    if (!$query) {
+        return response()->json(['message' => 'Query not provided'], 400);
+    }
+
+    $experts = Expert::where('consultation_category_id', 'like', "%$query%")
+        ->get();
+
+    if ($experts->isEmpty()) {
+        return response()->json(['message' => 'No Consultation_categories found'], 404);
+    }
+
+    return response()->json($experts);
+}
+
+public function showExpert($id)
+{
+    $expert = Expert::find($id);
+
+    if (!$expert) {
+        return response()->json(['message' => 'Expert not found'], 404);
+    }
+
+    return response()->json($expert);
+}
+
+public function addAvailableTime(Request $request)
+{
+    $request->validate([
+        'expert_id' => 'required',
+        'date' => 'required|date',
+        'time_slot' => 'required|string',
+    ]);
+
+    if (!Expert::where('id', $request->expert_id)->exists()) {
+        return response()->json(['message' => 'expert not found'], 404);
+    }
+
+    $availability = ExpertAvailability::create([
+        'expert_id' => $request->expert_id,
+        'date' => $request->date,
+        'time_slot' => $request->time_slot,
+        'is_booked' => false, 
+    ]);
+
+    return response()->json(['message' => 'Time slot added successfully!', 'availability' => $availability], 201);
+}
+public function getAvailableTimes($expert_id)
+{
+    $availableTimes = ExpertAvailability::where('expert_id', $expert_id)
+        ->where('is_booked', false)
+        ->get();
+
+    if ($availableTimes->isEmpty()) {
+        return response()->json(['message' => 'No available times found'], 404);
+    }
+
+    return response()->json($availableTimes, 200);
+}
+public function bookAppointment(Request $request)
+{
+    $request->validate([
+        'availability_id' => 'required|exists:expert_availabilities,id',
+        'user_id' => 'required', 
+    ]);
+
+    $availability = ExpertAvailability::find($request->availability_id);
+
+    if ($availability->is_booked) {
+        return response()->json(['message' => 'Time slot is already booked'], 400);
+    }
+
+    if (!User::where('id', $request->user_id)->exists()) {
+        return response()->json(['message' => 'User not found'], 404);
+    }
+
+    $availability->is_booked = true;
+    $availability->user_id = $request->user_id; 
+    $availability->save();
+
+    return response()->json(['message' => 'Appointment booked successfully!'], 200);
+}
+
+
+public function getBookedAppointments(Request $request)
+{
+    $request->validate([
+        'expert_id' => 'required|exists:experts,id', 
+    ]);
+
+    $appointments = ExpertAvailability::where('expert_id', $request->expert_id)
+        ->where('is_booked', true)
+        ->get();
+
+    return response()->json(['appointments' => $appointments], 200);
+}
+
+
 }

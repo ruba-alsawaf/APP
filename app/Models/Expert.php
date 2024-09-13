@@ -28,8 +28,12 @@ class Expert extends Authenticatable implements JWTSubject
         'phone',
         'address',
         'availability',
-        'consultation_categories', 
+        'consultation_category_id',
     ];
+    public function consultationCategory()
+{
+    return $this->belongsTo(ConsultationCategory::class, 'consultation_category_id');
+}
 
 
     /**

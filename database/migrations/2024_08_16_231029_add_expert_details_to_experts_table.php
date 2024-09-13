@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('phone')->nullable();
             $table->string('address')->nullable();
             $table->json('availability')->nullable(); 
-            $table->json('consultation_categories')->nullable(); 
+            $table->json('consultation_category_id')->nullable(); 
         });
     }
 
@@ -28,7 +28,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('experts', function (Blueprint $table) {
-            $table->dropColumn(['specialization', 'photo', 'experiences', 'phone', 'address', 'availability', 'consultation_categories']);
+            $table->dropColumn(['specialization', 'photo', 'experiences', 'phone', 'address', 'availability', 'consultation_category_id']);
         });
     }
 };

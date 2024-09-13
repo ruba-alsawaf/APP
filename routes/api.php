@@ -14,7 +14,20 @@ Route::group([
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/complete-profile', [AuthController::class, 'completeProfile']);
     Route::get('/user-info', [AuthController::class, 'getUser']);
-    Route::get('/experts/category/{category}', [AuthController::class, 'getExpertsByCategory']);
+    Route::get('/categories', [AuthController::class, 'getConsultationCategories']);
+    Route::get('/categories-with-experts', [AuthController::class, 'getCategoriesWithExperts']);
+
+
+    Route::post('/searchName', [AuthController::class, 'searchName'])->name('search');
+    Route::post('/searchConsultation_categories', [AuthController::class, 'searchConsultation_categories'])->name('search');
+    Route::get('/expert/{id}', [AuthController::class, 'showExpert'])->name('expert.show');
+
+    Route::post('/availability/add', [AuthController::class, 'addAvailableTime']);
+    Route::get('/availability/{expert_id}', [AuthController::class, 'getAvailableTimes']);
+    Route::post('/appointments/book', [AuthController::class, 'bookAppointment']);
+    Route::get('/appointments/booked', [AuthController::class, 'getBookedAppointments']);
+
+
 });
 
     Route::get('/', function () {
